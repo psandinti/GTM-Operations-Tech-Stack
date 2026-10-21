@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GTM Tech Stack & Operations Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+  --ink:#1E1462; --ink-2:#4A4378; --muted:#6E6A8C;
+  --blue:#0E8BFF; --violet:#5B4FD6;
+  --bg:#FFFFFF; --panel:#F4F4FA; --line:#E2E1EE; --field:#FFFFFF;
+  --c-data:#1E1462; --c-data-fg:#FFFFFF;
+  --c-eng:#FFFFFF; --c-eng-fg:#1E1462; --c-eng-line:#D9D7EA;
+  --c-price:#0E8BFF; --c-price-fg:#FFFFFF;
+  --warn:#B4231A; --warn-bg:#FDECEA; --ok:#137A4B; --ok-bg:#E6F5EE; --amber:#8A5A00; --amber-bg:#FFF3D6;
+  --font:"Public Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ink:#ECEBFA; --ink-2:#C4C1E4; --muted:#9A97B8;
+    --blue:#4BA8FF; --violet:#9D94F2;
+    --bg:#110D2E; --panel:#1B1640; --line:#2E2860; --field:#161236;
+    --c-data:#2A2180; --c-data-fg:#FFFFFF;
+    --c-eng:#1B1640; --c-eng-fg:#ECEBFA; --c-eng-line:#3A3378;
+    --c-price:#0E7BE6; --c-price-fg:#FFFFFF;
+    --warn:#FF8A80; --warn-bg:#3A1620; --ok:#6FD7A6; --ok-bg:#12302A; --amber:#F2C46B; --amber-bg:#352A10;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ink:#ECEBFA; --ink-2:#C4C1E4; --muted:#9A97B8;
+  --blue:#4BA8FF; --violet:#9D94F2;
+  --bg:#110D2E; --panel:#1B1640; --line:#2E2860; --field:#161236;
+  --c-data:#2A2180; --c-data-fg:#FFFFFF;
+  --c-eng:#1B1640; --c-eng-fg:#ECEBFA; --c-eng-line:#3A3378;
+  --c-price:#0E7BE6; --c-price-fg:#FFFFFF;
+  --warn:#FF8A80; --warn-bg:#3A1620; --ok:#6FD7A6; --ok-bg:#12302A; --amber:#F2C46B; --amber-bg:#352A10;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:28px 24px 64px}
+h1{font-size:clamp(26px,3.6vw,38px);line-height:1.1;font-weight:800;letter-spacing:-.02em;margin:0}
+.sub{color:var(--muted);margin:6px 0 0;max-width:70ch}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.mode{font-size:13px;color:var(--muted)}
+.mode.local{color:var(--amber);background:var(--amber-bg);padding:4px 10px;border-radius:6px}
+
+/* Pillars: the signature element, echoing the priorities slide */
+.pillars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,.8fr);gap:14px;margin-bottom:28px}
+.pillar{border-radius:16px;padding:20px 20px 18px;text-align:left;font:inherit;cursor:pointer;border:2px solid transparent;display:flex;flex-direction:column;gap:10px;min-height:190px;transition:transform .15s ease, box-shadow .15s ease}
+.pillar:hover{transform:translateY(-2px)}
+.pillar[aria-pressed="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--blue)}
+.pillar.data{background:var(--c-data);color:var(--c-data-fg)}
+.pillar.eng{background:var(--c-eng);color:var(--c-eng-fg);border-color:var(--c-eng-line)}
+.pillar.price{background:var(--c-price);color:var(--c-price-fg)}
+.pillar.run{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.pillar.run h2{font-size:19px}
+.pillar h2{margin:0;font-size:22px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
+.pillar .tag{opacity:.78;font-size:14px}
+.pillar .focus{font-size:13.5px;opacity:.9}
+.pillar .stats{margin-top:auto;display:flex;gap:18px;flex-wrap:wrap}
+.pillar .stat b{display:block;font-size:24px;line-height:1;font-weight:800}
+.pillar .stat span{font-size:12px;opacity:.8}
+
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:20px;overflow-x:auto}
+nav.tabs button{font:inherit;font-weight:600;color:var(--muted);background:none;border:0;padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--blue)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar .grow{flex:1 1 200px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+textarea{min-height:84px;resize:vertical}
+.toolbar select,.toolbar input{width:auto}
+.toolbar input.grow{width:100%}
+button.btn{font:inherit;font-weight:600;border-radius:8px;padding:9px 16px;border:1px solid var(--line);background:var(--field);color:var(--ink);cursor:pointer}
+button.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+button.btn.danger{color:var(--warn)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.pillar:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:820px}
+th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px}
+th{font-size:12.5px;font-weight:700;color:var(--muted);background:var(--panel);position:sticky;top:0}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--panel)}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.title-cell b{font-weight:600}
+.title-cell small{display:block;color:var(--muted)}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.chip.data{background:var(--c-data);color:var(--c-data-fg)}
+.chip.eng{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--violet)}
+.chip.price{background:var(--c-price);color:var(--c-price-fg)}
+.chip.run{background:var(--panel);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
+.status{font-size:12.5px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--panel);white-space:nowrap}
+.status.s-Blocked,.status.s-Declined{background:var(--warn-bg);color:var(--warn)}
+.status.s-Done{background:var(--ok-bg);color:var(--ok)}
+.status.s-New{background:var(--amber-bg);color:var(--amber)}
+.score{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;border-radius:6px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--panel)}
+.score.hi{background:var(--blue);color:#fff}
+.flag{color:var(--warn);font-weight:600}
+.empty{padding:36px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.empty button{margin-top:12px}
+
+.cost-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.cost-strip div{background:var(--panel);border-radius:10px;padding:12px 14px}
+.cost-strip b{display:block;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.cost-strip span{font-size:12.5px;color:var(--muted)}
+.u-cell{white-space:nowrap}
+.usage{display:inline-block;width:56px;height:6px;border-radius:3px;background:var(--panel);overflow:hidden;vertical-align:middle;box-shadow:inset 0 0 0 1px var(--line)}
+.usage i{display:block;height:100%}
+.u-hi i{background:var(--ok)}
+.u-mid i{background:var(--amber)}
+.u-lo i{background:var(--warn)}
+.u-cell small{color:var(--muted)}
+.muted{color:var(--muted)}
+
+.viewtoggle{display:flex}
+.viewtoggle .btn{border-radius:0}
+.viewtoggle .btn:first-child{border-radius:8px 0 0 8px}
+.viewtoggle .btn:last-child{border-radius:0 8px 8px 0;margin-left:-1px}
+.viewtoggle .btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(250px,1fr);gap:12px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--panel);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:220px}
+.col.over{box-shadow:inset 0 0 0 2px var(--blue)}
+.col header{display:flex;justify-content:space-between;align-items:center;padding:2px 4px}
+.col .count{font-size:13px;color:var(--muted);font-weight:600}
+.cards{display:flex;flex-direction:column;gap:8px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:grab;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.card:hover{border-color:var(--violet)}
+.card.dragging{opacity:.5}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card .score{height:22px;min-width:28px;font-size:12.5px}
+.card b{font-weight:600;line-height:1.3}
+.card .upd{margin:0;color:var(--ink-2);font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prog{height:5px;background:var(--panel);border-radius:3px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--blue)}
+.card-meta{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted)}
+.add-card{font:inherit;font-size:13px;color:var(--muted);background:none;border:1px dashed var(--line);border-radius:8px;padding:7px;cursor:pointer}
+.add-card:hover{color:var(--ink);border-color:var(--violet)}
+.tasks{display:flex;flex-direction:column;gap:6px;margin:6px 0 8px}
+.task-row{display:grid;grid-template-columns:auto minmax(0,2fr) minmax(0,1fr) 150px auto;gap:6px;align-items:center}
+.task-row input[type=checkbox]{width:18px;height:18px}
+.task-row .t-del{padding:6px 10px}
+@media (max-width:600px){.task-row{grid-template-columns:auto 1fr auto}.task-row .t-who,.task-row .t-due{grid-column:2}}
+
+/* Intake */
+.intake{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;align-items:start}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid .full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:13.5px;font-weight:600}
+label.f .hint{font-weight:400;color:var(--muted);font-size:12.5px}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:0}
+legend{font-size:13.5px;font-weight:600;padding:0 4px}
+.checks{display:flex;flex-wrap:wrap;gap:6px 16px}
+.checks label{display:flex;gap:6px;align-items:center;font-size:14px;font-weight:400}
+.checks input{width:auto}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg label{flex:1 1 0;min-width:80px}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg span{display:block;text-align:center;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;font-weight:500;cursor:pointer;background:var(--field)}
+.seg input:checked+span{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg input:focus-visible+span{outline:3px solid var(--blue);outline-offset:2px}
+.process{background:var(--panel);border-radius:14px;padding:20px}
+.process h3{margin:0 0 12px;font-size:17px}
+.process ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.process li{counter-increment:s;position:relative;padding:0 0 16px 40px}
+.process li::before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+.process li b{display:block}
+.process li span{color:var(--ink-2);font-size:14px}
+.process .rubric{border-top:1px solid var(--line);padding-top:12px;font-size:13.5px;color:var(--ink-2)}
+.process .rubric p{margin:0 0 6px}
+.preview-score{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:14px;color:var(--ink-2)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+
+dialog{border:0;border-radius:16px;padding:0;width:min(720px,94vw);max-height:90vh;background:var(--bg);color:var(--ink)}
+dialog::backdrop{background:rgba(17,13,46,.5)}
+dialog form{padding:22px}
+dialog h3{margin:0 0 16px;font-size:20px}
+.dlg-actions{display:flex;justify-content:space-between;gap:10px;margin-top:18px;flex-wrap:wrap}
+.dlg-actions div{display:flex;gap:10px}
+[hidden]{display:none!important}
+
+@media (max-width:860px){
+  .pillars{grid-template-columns:1fr}
+  .pillar{min-height:0}
+  .intake{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>GTM Tech Stack & Operations</h1>
+    </div>
+    <div id="mode" class="mode" hidden></div>
+  </header>
+
+  <section class="pillars" id="pillars" aria-label="Priorities"></section>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="projects">Projects</button>
+    <button role="tab" aria-selected="false" data-tab="intake">Submit a request</button>
+    <button role="tab" aria-selected="false" data-tab="stack">Tech stack & cost</button>
+  </nav>
+
+  <!-- Projects -->
+  <section id="tab-projects">
+    <div class="toolbar">
+      <input class="grow" id="q" type="search" placeholder="Search projects, owners, systems" aria-label="Search projects">
+      <select id="fStatus" aria-label="Filter by status"></select>
+      <select id="fQuarter" aria-label="Filter by quarter"></select>
+      <div class="viewtoggle" role="group" aria-label="View"><button class="btn" data-view="board" aria-pressed="true">Board</button><button class="btn" data-view="list" aria-pressed="false">List</button></div>
+      <button class="btn" id="exportProjects">Export CSV</button>
+      <button class="btn primary" id="addProject">Add project</button>
+    </div>
+    <div id="projectsOut"></div>
+  </section>
+
+  <!-- Intake -->
+  <section id="tab-intake" hidden>
+    <div class="intake">
+      <form id="intakeForm" novalidate>
+        <div class="form-grid">
+          <label class="f full">What do you need?
+            <input name="title" required placeholder="e.g. Sync ZoomInfo intent data into Salesforce leads">
+          </label>
+          <label class="f">Your name<input name="requester" required></label>
+          <label class="f">Team
+            <select name="team"><option>Sales</option><option>Sales Ops</option><option>Marketing</option><option>Customer Success</option><option>Finance</option><option>RevOps</option><option>Leadership</option><option>Other</option></select>
+          </label>
+          <label class="f">Request type
+            <select name="type"><option>New tool or vendor</option><option>Enhancement to existing tool</option><option>Integration or data sync</option><option>Report or dashboard</option><option>Data cleanup</option><option>Access or permissions</option><option>Process or playbook</option></select>
+          </label>
+          <label class="f">Systems involved
+            <input name="systems" placeholder="Salesforce, Outreach…">
+          </label>
+          <label class="f full">Which priority does this support?
+            <select name="pillar"></select>
+            <span class="hint">Pick Run the business for keep-the-lights-on work: access, renewals, admin, reporting and fixes.</span>
+          </label>
+          <fieldset class="full"><legend>Ties to (pick all that apply)</legend><div class="checks" id="tiesChecks"></div></fieldset>
+          <label class="f full">Problem and expected outcome
+            <textarea name="problem" placeholder="What’s broken or missing, who it affects, and what success looks like"></textarea>
+          </label>
+          <div class="f">Business impact
+            <div class="seg" role="radiogroup" aria-label="Business impact">
+              <label><input type="radio" name="impact" value="1"><span>Low</span></label>
+              <label><input type="radio" name="impact" value="2" checked><span>Medium</span></label>
+              <label><input type="radio" name="impact" value="3"><span>High</span></label>
+            </div>
+          </div>
+          <div class="f">Urgency
+            <div class="seg" role="radiogroup" aria-label="Urgency">
+              <label><input type="radio" name="urgency" value="1"><span>Can wait</span></label>
+              <label><input type="radio" name="urgency" value="2" checked><span>This quarter</span></label>
+              <label><input type="radio" name="urgency" value="3"><span>Blocking</span></label>
+            </div>
+          </div>
+          <label class="f">Needed by<input type="date" name="needBy"></label>
+          <label class="f">Estimated cost (if any)<input name="costEst" inputmode="decimal" placeholder="Annual $, e.g. 12000"></label>
+          <div class="full preview-score"><span class="score" id="liveScore">0</span> Priority score, recalculated as you fill this in</div>
+          <div class="full"><button class="btn primary" type="submit">Submit request</button></div>
+        </div>
+      </form>
+      <aside class="process">
+        <h3>How intake works</h3>
+        <ol>
+          <li><b>Submit</b><span>Anyone in GTM files a request here. It lands on the Projects tab as New.</span></li>
+          <li><b>Triage</b><span>Sales Ops reviews new requests weekly, confirms the priority mapping, sets effort and an owner.</span></li>
+          <li><b>Decide</b><span>Approve into Q4 2026 or Q1 2027, park in the backlog, or decline with a reason the requester can see.</span></li>
+          <li><b>Deliver</b><span>The owner moves it through In progress to Done and updates the tech stack if a tool, cost or contact changed.</span></li>
+        </ol>
+        <div class="rubric">
+          <p><b>Priority score</b> (out of 20)</p>
+          <p>Supports one of the top 3: +4. Run the business: +2. Each strategic tie: +1. Impact: 2, 4 or 6. Urgency: 1 to 3. Effort small +2, medium +1, large 0.</p>
+          <p>Scores of 13 and up are highlighted for the triage meeting.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Stack -->
+  <section id="tab-stack" hidden>
+    <div class="cost-strip" id="costStrip"></div>
+    <div class="toolbar">
+      <input class="grow" id="qTool" type="search" placeholder="Search tools, owners, vendor contacts" aria-label="Search tools">
+      <button class="btn" id="exportTools">Export CSV</button>
+      <button class="btn primary" id="addTool">Add tool</button>
+    </div>
+    <div id="toolsOut"></div>
+  </section>
+</div>
+
+<dialog id="projDlg"><form method="dialog" id="projForm"></form></dialog>
+<dialog id="toolDlg"><form method="dialog" id="toolForm"></form></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const PILLARS = {
+  data:  {name:"Data foundation", tag:"Salesforce as the source of truth", focus:"Q4: Salesforce audit and cleanup, Orion dual-platform revenue", cls:"data"},
+  eng:   {name:"Sales engagement & AI", tag:"Outreach, Claude, ZoomInfo", focus:"Q4: Outreach live and integrated, Claude workbench guardrails by role", cls:"eng"},
+  price: {name:"Pricing Wizard", tag:"Quoting tool, co-owned with Finance", focus:"Q4: V2 go-live, Salesforce linking, discount approval rules", cls:"price"},
+  run:   {name:"Run the business", tag:"Keep-the-lights-on work", focus:"Access, renewals, admin, reporting and fixes that keep GTM running", cls:"run"}
+};
+const TIES = ["Market share growth","Client Retention initiative","Enterprise initiative","Technology first organization","Drive profitable growth"];
+const STATUSES = ["New","Triage","Approved","In progress","Blocked","Done","Declined"];
+const QUARTERS = ["Q4 2026","Q1 2027","Backlog"];
+const TOOL_STATUS = ["Active","Implementing","Evaluating","Sunsetting"];
+const pil = k => PILLARS[k] || PILLARS.run;
+const OPEN = s => !["Done","Declined"].includes(s);
+
+let projects = [], tools = [], db = null, live = false;
+let activePillar = null, activeTab = "projects";
+
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => (Number(n)||0).toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0});
+const newId = p => p + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2200)}
+
+function score(p){
+  let s = 0;
+  if (["data","eng","price"].includes(p.pillar)) s += 4; else if (p.pillar === "run") s += 2;
+  s += (p.ties||[]).length;
+  s += (Number(p.impact)||0) * 2;
+  s += Number(p.urgency)||0;
+  s += ({S:2,M:1,L:0})[p.effort] ?? 1;
+  return s;
+}
+
+/* ---------- persistence ---------- */
+async function save(coll, item){
+  item.updatedAt = new Date().toISOString();
+  if (live){
+    try { await db.collection(coll).doc(item.id).set(JSON.parse(JSON.stringify(item))); }
+    catch(e){ toast(e.code === "invalid_argument" ? "You have view-only access, so this wasn’t saved" : "Couldn’t save. Try again."); return false; }
+  } else {
+    const list = coll === "projects" ? projects : tools;
+    const i = list.findIndex(x => x.id === item.id);
+    i >= 0 ? list[i] = item : list.push(item);
+    renderAll();
+  }
+  return true;
+}
+async function remove(coll, id){
+  if (live){ try{ await db.collection(coll).doc(id).delete(); }catch(e){ toast("Couldn’t delete. Try again."); } }
+  else { if (coll==="projects") projects = projects.filter(p=>p.id!==id); else tools = tools.filter(t=>t.id!==id); renderAll(); }
+}
+
+/* ---------- pillars ---------- */
+function renderPillars(){
+  $("#pillars").innerHTML = ["data","eng","price","run"].map(k => {
+    const P = PILLARS[k];
+    const ps = projects.filter(p => p.pillar === k);
+    const open = ps.filter(p => OPEN(p.status)).length;
+    const spend = tools.filter(t => t.pillar === k).reduce((a,t)=>a+(Number(t.annualCost)||0),0);
+    return `<button class="pillar ${P.cls}" data-p="${k}" aria-pressed="${activePillar===k}">
+      <h2>${esc(P.name)}</h2>
+      <div class="tag">${esc(P.tag)}</div>
+      <div class="focus">${esc(P.focus)}</div>
+      <div class="stats">
+        <div class="stat"><b>${open}</b><span>open projects</span></div>
+        <div class="stat"><b>${spend ? money(spend) : "—"}</b><span>annual tool spend</span></div>
+      </div>
+    </button>`;
+  }).join("");
+  document.querySelectorAll(".pillar").forEach(b => b.onclick = () => {
+    activePillar = activePillar === b.dataset.p ? null : b.dataset.p;
+    renderAll();
+  });
+}
+
+/* ---------- projects ---------- */
+function renderProjects(){
+  const q = $("#q").value.trim().toLowerCase(), fs = $("#fStatus").value, fq = $("#fQuarter").value;
+  let list = projects.filter(p =>
+    (!activePillar || p.pillar === activePillar) &&
+    (!fs || (fs === "open" ? (view === "board" ? p.status !== "Declined" : OPEN(p.status)) : p.status === fs)) &&
+    (!fq || p.quarter === fq) &&
+    (!q || [p.title,p.owner,p.requester,p.systems,p.team,p.problem].join(" ").toLowerCase().includes(q)));
+  list.sort((a,b) => score(b) - score(a) || String(a.title).localeCompare(b.title));
+  const out = $("#projectsOut");
+  if (!projects.length){ out.innerHTML = `<div class="empty">No projects yet. Submit the first request or add a project directly.<br><button class="btn primary" onclick="openProject()">Add project</button></div>`; return; }
+  if (!list.length){ out.innerHTML = `<div class="empty">Nothing matches these filters. Clear the search or pick another priority.</div>`; return; }
+  if (view === "board") return renderBoard(list, out, fs);
+  const today = new Date().toISOString().slice(0,10);
+  out.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Score</th><th>Project</th><th>Priority</th><th>Status</th><th>Quarter</th><th>Owner</th><th>Systems</th><th>Needed by</th><th>Tasks</th></tr></thead>
+    <tbody>${list.map(p => {
+      const s = score(p), late = p.needBy && p.needBy < today && OPEN(p.status);
+      return `<tr data-id="${esc(p.id)}">
+        <td><span class="score ${s>=13?"hi":""}">${s}</span></td>
+        <td class="title-cell"><b>${esc(p.title)}</b><small>${esc(p.type||"")}${p.requester?` · from ${esc(p.requester)}`:""}</small></td>
+        <td><span class="chip ${pil(p.pillar).cls}">${esc(pil(p.pillar).name)}</span></td>
+        <td><span class="status s-${esc((p.status||"").replace(/\s/g,""))}">${esc(p.status)}</span></td>
+        <td>${esc(p.quarter||"")}</td>
+        <td>${p.owner?esc(p.owner):'<span class="flag">Unassigned</span>'}</td>
+        <td>${esc(p.systems||"")}</td>
+        <td>${p.needBy?`<span class="${late?"flag":""}">${esc(p.needBy)}</span>`:""}</td>
+        <td>${taskSummary(p)}</td>
+      </tr>`;}).join("")}</tbody></table></div>`;
+  out.querySelectorAll("tbody tr").forEach(tr => tr.onclick = () => openProject(projects.find(p => p.id === tr.dataset.id)));
+}
+
+let view = "board", dragId = null;
+function taskStats(p){ const t = p.tasks||[]; return {done:t.filter(x=>x.done).length, total:t.length}; }
+function taskSummary(p){ const {done,total} = taskStats(p); return total ? `${done}/${total}` : ""; }
+function renderBoard(list, out, fs){
+  const cols = fs === "" ? STATUSES : fs === "open" ? STATUSES.filter(s => s !== "Declined") : [fs];
+  const today = new Date().toISOString().slice(0,10);
+  out.innerHTML = `<div class="board">${cols.map(s => {
+    const items = list.filter(p => p.status === s);
+    return `<section class="col" data-status="${esc(s)}"><header><span class="status s-${esc(s.replace(/\s/g,""))}">${esc(s)}</span><span class="count">${items.length}</span></header>
+    <div class="cards">${items.map(p => {
+      const {done,total} = taskStats(p), sc = score(p), late = p.needBy && p.needBy < today && OPEN(p.status);
+      return `<article class="card" draggable="true" tabindex="0" data-id="${esc(p.id)}">
+        <div class="card-top"><span class="chip ${pil(p.pillar).cls}">${esc(pil(p.pillar).name)}</span><span class="score ${sc>=13?"hi":""}">${sc}</span></div>
+        <b>${esc(p.title)}</b>
+        ${p.update ? `<p class="upd">${esc(p.update)}</p>` : ""}
+        ${total ? `<div class="prog" role="img" aria-label="${done} of ${total} tasks done"><i style="width:${Math.round(done/total*100)}%"></i></div>` : ""}
+        <div class="card-meta"><span>${p.owner ? esc(p.owner) : '<span class="flag">Unassigned</span>'}</span><span>${total ? `${done}/${total} tasks` : ""}${p.needBy ? ` <span class="${late?"flag":""}">${esc(p.needBy)}</span>` : ""}</span></div>
+      </article>`;}).join("")}</div>
+    <button class="add-card" data-status="${esc(s)}">Add project</button></section>`;}).join("")}</div>`;
+  out.querySelectorAll(".card").forEach(c => {
+    const open = () => openProject(projects.find(p => p.id === c.dataset.id));
+    c.onclick = open; c.onkeydown = e => { if (e.key === "Enter") open(); };
+    c.ondragstart = e => { dragId = c.dataset.id; c.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", dragId); };
+    c.ondragend = () => { c.classList.remove("dragging"); dragId = null; };
+  });
+  out.querySelectorAll(".col").forEach(col => {
+    col.ondragover = e => { if (!dragId) return; e.preventDefault(); col.classList.add("over"); };
+    col.ondragleave = e => { if (!col.contains(e.relatedTarget)) col.classList.remove("over"); };
+    col.ondrop = async e => {
+      e.preventDefault(); col.classList.remove("over");
+      const p = projects.find(x => x.id === dragId), s = col.dataset.status;
+      if (p && p.status !== s && await save("projects", {...p, status:s})) toast(`Moved to ${s}`);
+    };
+  });
+  out.querySelectorAll(".add-card").forEach(b => b.onclick = () => openProject(null, b.dataset.status));
+}
+
+function opts(list, sel){ return list.map(v => `<option ${v===sel?"selected":""}>${esc(v)}</option>`).join(""); }
+function pillarOpts(sel){ return Object.entries(PILLARS).map(([k,P]) => `<option value="${k}" ${k===sel?"selected":""}>${esc(P.name)}</option>`).join(""); }
+function tieChecks(sel=[]){ return TIES.map(t => `<label><input type="checkbox" name="ties" value="${esc(t)}" ${sel.includes(t)?"checked":""}> ${esc(t)}</label>`).join(""); }
+
+function openProject(p, st){
+  const isNew = !p;
+  p = p || {id:newId("p"), status:st||"Triage", quarter:"Q4 2026", pillar:activePillar||"data", ties:[], impact:2, urgency:2, effort:"M"};
+  const f = $("#projForm");
+  f.innerHTML = `<h3>${isNew?"Add project":"Edit project"}</h3>
+  <div class="form-grid">
+    <label class="f full">Project<input name="title" value="${esc(p.title)}" required></label>
+    <label class="f">Priority<select name="pillar">${pillarOpts(p.pillar)}</select></label>
+    <label class="f">Status<select name="status">${opts(STATUSES,p.status)}</select></label>
+    <label class="f">Quarter<select name="quarter">${opts(QUARTERS,p.quarter)}</select></label>
+    <label class="f">Owner<input name="owner" value="${esc(p.owner)}"></label>
+    <label class="f">Requester<input name="requester" value="${esc(p.requester)}"></label>
+    <label class="f">Team<input name="team" value="${esc(p.team)}"></label>
+    <label class="f">Type<input name="type" value="${esc(p.type)}"></label>
+    <label class="f">Systems<input name="systems" value="${esc(p.systems)}"></label>
+    <fieldset class="full"><legend>Ties to</legend><div class="checks">${tieChecks(p.ties)}</div></fieldset>
+    <label class="f">Impact<select name="impact">${[["1","Low"],["2","Medium"],["3","High"]].map(([v,l])=>`<option value="${v}" ${String(p.impact)===v?"selected":""}>${l}</option>`).join("")}</select></label>
+    <label class="f">Urgency<select name="urgency">${[["1","Can wait"],["2","This quarter"],["3","Blocking"]].map(([v,l])=>`<option value="${v}" ${String(p.urgency)===v?"selected":""}>${l}</option>`).join("")}</select></label>
+    <label class="f">Effort<select name="effort">${[["S","Small"],["M","Medium"],["L","Large"]].map(([v,l])=>`<option value="${v}" ${p.effort===v?"selected":""}>${l}</option>`).join("")}</select></label>
+    <label class="f">Needed by<input type="date" name="needBy" value="${esc(p.needBy)}"></label>
+    <label class="f full">Problem and outcome<textarea name="problem">${esc(p.problem)}</textarea></label>
+    <label class="f full">Notes and decision log<textarea name="notes" placeholder="Triage decisions, decline reasons, blockers">${esc(p.notes)}</textarea></label>
+    <label class="f full">Latest status update<textarea name="update" placeholder="One or two lines on where this stands">${esc(p.update)}</textarea>${p.updateAt ? `<span class="hint">Last updated ${esc(p.updateAt.slice(0,10))}</span>` : ""}</label>
+    <div class="f full">Tasks<div class="tasks" id="taskList"></div><div><button type="button" class="btn" id="addTask">Add task</button></div></div>
+  </div>
+  <div class="dlg-actions">
+    <div>${isNew?"":'<button class="btn danger" value="delete">Delete</button>'}</div>
+    <div><button class="btn" value="cancel" formnovalidate>Cancel</button><button class="btn primary" value="save">Save project</button></div>
+  </div>`;
+  const tl = $("#taskList");
+  const addRow = (t = {}) => {
+    const r = document.createElement("div"); r.className = "task-row"; r.dataset.id = t.id || newId("k");
+    r.innerHTML = `<input type="checkbox" aria-label="Done" ${t.done?"checked":""}><input class="t-text" placeholder="Task" aria-label="Task" value="${esc(t.text)}"><input class="t-who" placeholder="Assignee" aria-label="Assignee" value="${esc(t.assignee)}"><input class="t-due" type="date" aria-label="Due date" value="${esc(t.due)}"><button type="button" class="btn t-del" aria-label="Remove task">×</button>`;
+    r.querySelector(".t-del").onclick = () => r.remove();
+    tl.appendChild(r); return r;
+  };
+  (p.tasks||[]).forEach(addRow);
+  $("#addTask").onclick = () => addRow().querySelector(".t-text").focus();
+  f.onkeydown = e => { if (e.key === "Enter" && e.target.tagName === "INPUT"){ e.preventDefault(); if (e.target.classList.contains("t-text")) addRow().querySelector(".t-text").focus(); } };
+  const dlg = $("#projDlg");
+  dlg.onclose = async () => {
+    if (dlg.returnValue === "delete"){ if (confirm("Delete this project?")){ await remove("projects", p.id); toast("Project deleted"); } return; }
+    if (dlg.returnValue !== "save") return;
+    const fd = new FormData(f), o = {...p};
+    ["title","pillar","status","quarter","owner","requester","team","type","systems","effort","needBy","problem","notes","update"].forEach(k => o[k] = (fd.get(k)||"").toString().trim());
+    o.impact = Number(fd.get("impact")); o.urgency = Number(fd.get("urgency")); o.ties = fd.getAll("ties");
+    if (o.update !== (p.update||"")) o.updateAt = new Date().toISOString();
+    o.tasks = [...f.querySelectorAll(".task-row")].map(r => ({id:r.dataset.id, done:r.querySelector("input[type=checkbox]").checked, text:r.querySelector(".t-text").value.trim(), assignee:r.querySelector(".t-who").value.trim(), due:r.querySelector(".t-due").value})).filter(t => t.text);
+    if (!o.title){ toast("Add a project name to save"); return; }
+    if (!o.createdAt) o.createdAt = new Date().toISOString();
+    if (await save("projects", o)) toast("Project saved");
+  };
+  dlg.returnValue = ""; dlg.showModal();
+}
+
+/* ---------- intake ---------- */
+function intakeData(){
+  const fd = new FormData($("#intakeForm"));
+  return {title:(fd.get("title")||"").trim(), requester:(fd.get("requester")||"").trim(), team:fd.get("team"), type:fd.get("type"),
+    systems:(fd.get("systems")||"").trim(), pillar:fd.get("pillar"), ties:fd.getAll("ties"), problem:(fd.get("problem")||"").trim(),
+    impact:Number(fd.get("impact")), urgency:Number(fd.get("urgency")), needBy:fd.get("needBy")||"", costEst:(fd.get("costEst")||"").trim(), effort:"M"};
+}
+function updateLiveScore(){ const s = score(intakeData()); const el = $("#liveScore"); el.textContent = s; el.classList.toggle("hi", s>=13); }
+function setupIntake(){
+  const f = $("#intakeForm");
+  f.pillar.innerHTML = pillarOpts("data");
+  $("#tiesChecks").innerHTML = tieChecks();
+  f.addEventListener("input", updateLiveScore); f.addEventListener("change", updateLiveScore);
+  updateLiveScore();
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const d = intakeData();
+    if (!d.title || !d.requester){ toast("Add what you need and your name"); return; }
+    const now = new Date().toISOString();
+    const p = {...d, id:newId("p"), status:"New", quarter: "", owner:"", createdAt:now,
+      notes: d.costEst ? `Requester’s cost estimate: ${d.costEst}` : ""};
+    if (await save("projects", p)){
+      f.reset(); f.pillar.value = "data"; updateLiveScore();
+      toast("Request submitted"); switchTab("projects");
+    }
+  };
+}
+
+/* ---------- tools ---------- */
+function renderTools(){
+  const q = $("#qTool").value.trim().toLowerCase();
+  const list = tools.filter(t => (!activePillar || t.pillar === activePillar) &&
+    (!q || [t.name,t.category,t.owner,t.vendorContact,t.notes].join(" ").toLowerCase().includes(q)))
+    .sort((a,b) => (Number(b.annualCost)||0) - (Number(a.annualCost)||0) || String(a.name).localeCompare(b.name));
+  const total = list.reduce((a,t)=>a+(Number(t.annualCost)||0),0);
+  const now = new Date(), in90 = new Date(now.getTime()+90*864e5).toISOString().slice(0,10), today = now.toISOString().slice(0,10);
+  const renewing = list.filter(t => t.renewal && t.renewal >= today && t.renewal <= in90);
+  const missing = list.filter(t => !t.annualCost || !t.owner).length;
+  const used = list.map(usage).filter(Boolean);
+  const avg = used.length ? used.reduce((a,u) => a + u.rate, 0) / used.length : null;
+  const under = list.filter(t => { const u = usage(t); return u && u.rate < .5; });
+  $("#costStrip").innerHTML = `
+    <div><b>${money(total)}</b><span>Annual spend${activePillar?` · ${esc(PILLARS[activePillar].name)}`:""}</span></div>
+    <div><b>${avg === null ? "—" : Math.round(avg*100) + "%"}</b><span>Average usage across ${used.length} of ${list.length} tools</span></div>
+    <div><b>${under.length}</b><span>Under 50% used${under.length?`: ${esc(under.map(t=>t.name).join(", "))}`:""}</span></div>
+    <div><b>${renewing.length}</b><span>Renewals in the next 90 days${renewing.length?`: ${esc(renewing.map(t=>t.name).join(", "))}`:""}</span></div>
+    <div><b>${missing}</b><span>Missing a cost or owner</span></div>`;
+  const out = $("#toolsOut");
+  if (!tools.length){ out.innerHTML = `<div class="empty">No tools yet. Add your first tool with its cost and point of contact.<br><button class="btn primary" onclick="openTool()">Add tool</button></div>`; return; }
+  if (!list.length){ out.innerHTML = `<div class="empty">Nothing matches. Clear the search or pick another priority.</div>`; return; }
+  out.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Tool</th><th>Priority</th><th>Status</th><th>Internal owner</th><th>Vendor contact</th><th class="num">Annual cost</th><th>Usage</th><th class="num">Cost per active user</th><th>Renewal</th><th>Projects</th></tr></thead>
+    <tbody>${list.map(t => {
+      const soon = t.renewal && t.renewal >= today && t.renewal <= in90;
+      const linked = projects.filter(p => OPEN(p.status) && (p.systems||"").toLowerCase().includes(String(t.name).toLowerCase())).length;
+      return `<tr data-id="${esc(t.id)}">
+        <td class="title-cell"><b>${esc(t.name)}</b><small>${esc(t.category||"")}</small></td>
+        <td><span class="chip ${pil(t.pillar).cls}">${esc(pil(t.pillar).name)}</span></td>
+        <td>${esc(t.status||"")}</td>
+        <td>${t.owner?esc(t.owner):'<span class="flag">Add owner</span>'}</td>
+        <td>${esc(t.vendorContact||"")}</td>
+        <td class="num">${t.annualCost?money(t.annualCost):'<span class="flag">Add cost</span>'}</td>
+        <td class="u-cell">${usageCell(t)}</td>
+        <td class="num">${usage(t)?.perUser ? money(usage(t).perUser) : ""}</td>
+        <td>${t.renewal?`<span class="${soon?"flag":""}">${esc(t.renewal)}</span>`:""}</td>
+        <td>${linked||""}</td></tr>`;}).join("")}</tbody></table></div>`;
+  out.querySelectorAll("tbody tr").forEach(tr => tr.onclick = () => openTool(tools.find(t => t.id === tr.dataset.id)));
+}
+
+function usage(t){
+  const s = parseFloat(String(t.seats||"").replace(/[^0-9.]/g,"")), a = Number(t.activeUsers);
+  if (!s || t.activeUsers === null || t.activeUsers === undefined || t.activeUsers === "" || isNaN(a)) return null;
+  return {seats:s, active:a, rate:a/s, perUser: t.annualCost && a ? t.annualCost / a : null};
+}
+function usageCell(t){
+  const u = usage(t);
+  if (!u) return '<span class="muted">Add usage</span>';
+  const cls = u.rate >= .8 ? "u-hi" : u.rate >= .5 ? "u-mid" : "u-lo";
+  return `<span class="usage ${cls}"><i style="width:${Math.min(100, Math.round(u.rate*100))}%"></i></span> <b>${Math.round(u.rate*100)}%</b> <small>${u.active} of ${u.seats}${t.usageAsOf ? ` · ${esc(t.usageAsOf)}` : ""}</small>`;
+}
+
+function openTool(t){
+  const isNew = !t;
+  t = t || {id:newId("t"), status:"Active", pillar:activePillar||"data"};
+  const f = $("#toolForm");
+  f.innerHTML = `<h3>${isNew?"Add tool":"Edit tool"}</h3>
+  <div class="form-grid">
+    <label class="f">Tool<input name="name" value="${esc(t.name)}" required></label>
+    <label class="f">Category<input name="category" value="${esc(t.category)}" placeholder="CRM, sales engagement, data…"></label>
+    <label class="f">Priority<select name="pillar">${pillarOpts(t.pillar)}</select></label>
+    <label class="f">Status<select name="status">${opts(TOOL_STATUS,t.status)}</select></label>
+    <label class="f">Internal owner<input name="owner" value="${esc(t.owner)}" placeholder="Name, team"></label>
+    <label class="f">Vendor contact<input name="vendorContact" value="${esc(t.vendorContact)}" placeholder="Name, email or phone"></label>
+    <label class="f">Annual cost (USD)<input name="annualCost" inputmode="decimal" value="${esc(t.annualCost)}"></label>
+    <label class="f">Seats purchased<input name="seats" inputmode="numeric" value="${esc(t.seats)}"></label>
+    <label class="f">Active users<input name="activeUsers" inputmode="numeric" value="${esc(t.activeUsers)}" placeholder="From the vendor’s admin console"></label>
+    <label class="f">Usage measured on<input type="date" name="usageAsOf" value="${esc(t.usageAsOf)}"></label>
+    <label class="f">Contract renewal<input type="date" name="renewal" value="${esc(t.renewal)}"></label>
+    <label class="f">Billing<select name="billing">${opts(["Annual","Monthly","Multi-year","Internal build"],t.billing||"Annual")}</select></label>
+    <label class="f full">Notes<textarea name="notes" placeholder="Integrations, contract terms, admin access">${esc(t.notes)}</textarea></label>
+  </div>
+  <div class="dlg-actions">
+    <div>${isNew?"":'<button class="btn danger" value="delete">Delete</button>'}</div>
+    <div><button class="btn" value="cancel" formnovalidate>Cancel</button><button class="btn primary" value="save">Save tool</button></div>
+  </div>`;
+  const dlg = $("#toolDlg");
+  dlg.onclose = async () => {
+    if (dlg.returnValue === "delete"){ if (confirm("Delete this tool?")){ await remove("tools", t.id); toast("Tool deleted"); } return; }
+    if (dlg.returnValue !== "save") return;
+    const fd = new FormData(f), o = {...t};
+    ["name","category","pillar","status","owner","vendorContact","seats","usageAsOf","renewal","billing","notes"].forEach(k => o[k] = (fd.get(k)||"").toString().trim());
+    const au = String(fd.get("activeUsers")||"").replace(/[^0-9]/g,""); o.activeUsers = au ? Number(au) : null;
+    const c = String(fd.get("annualCost")||"").replace(/[^0-9.]/g,""); o.annualCost = c ? Number(c) : null;
+    if (!o.name){ toast("Add a tool name to save"); return; }
+    if (await save("tools", o)) toast("Tool saved");
+  };
+  dlg.returnValue = ""; dlg.showModal();
+}
+
+/* ---------- export ---------- */
+async function exportCsv(kind){
+  const rows = kind === "projects"
+    ? [["Score","Project","Priority","Ties","Status","Quarter","Owner","Requester","Team","Type","Systems","Impact","Urgency","Effort","Needed by","Tasks done","Latest update","Problem","Notes"],
+       ...projects.map(p => [score(p),p.title,pil(p.pillar).name,(p.ties||[]).join("; "),p.status,p.quarter,p.owner,p.requester,p.team,p.type,p.systems,p.impact,p.urgency,p.effort,p.needBy,taskSummary(p),p.update,p.problem,p.notes])]
+    : [["Tool","Category","Priority","Status","Internal owner","Vendor contact","Annual cost","Seats","Active users","Usage rate","Usage measured on","Renewal","Billing","Notes"],
+       ...tools.map(t => [t.name,t.category,pil(t.pillar).name,t.status,t.owner,t.vendorContact,t.annualCost,t.seats,t.activeUsers,usage(t) ? Math.round(usage(t).rate*100) + "%" : "",t.usageAsOf,t.renewal,t.billing,t.notes])];
+  const csv = rows.map(r => r.map(v => `"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  const dl = await window.claude?.use?.("downloads").catch(()=>null);
+  if (!dl){ toast("Export isn’t available in this view"); return; }
+  try { await dl.save({filename:`gtm-${kind}.csv`, data:csv}); } catch(e){ /* viewer declined */ }
+}
+
+/* ---------- shell ---------- */
+function switchTab(name){
+  activeTab = name;
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+  ["projects","intake","stack"].forEach(t => $("#tab-"+t).hidden = t !== name);
+}
+function renderAll(){ renderPillars(); renderProjects(); renderTools(); }
+
+function init(){
+  $("#fStatus").innerHTML = `<option value="">All statuses</option><option value="open" selected>Open only</option>` + STATUSES.map(s=>`<option>${s}</option>`).join("");
+  $("#fQuarter").innerHTML = `<option value="">All quarters</option>` + QUARTERS.map(s=>`<option>${s}</option>`).join("");
+  ["#q","#fStatus","#fQuarter"].forEach(s => $(s).addEventListener("input", renderProjects));
+  $("#qTool").addEventListener("input", renderTools);
+  document.querySelectorAll(".viewtoggle button").forEach(b => b.onclick = () => { view = b.dataset.view; document.querySelectorAll(".viewtoggle button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderProjects(); });
+  $("#addProject").onclick = () => openProject();
+  $("#addTool").onclick = () => openTool();
+  $("#exportProjects").onclick = () => exportCsv("projects");
+  $("#exportTools").onclick = () => exportCsv("tools");
+  document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+  setupIntake();
+  renderAll();
+  connect();
+}
+
+async function connect(){
+  const mode = $("#mode");
+  try { db = window.claude?.use ? await window.claude.use("db") : null; } catch(e){ db = null; }
+  if (!db){ mode.textContent = "Working offline: changes stay in this tab"; mode.classList.add("local"); mode.hidden = false; return; }
+  live = true;
+  const onErr = () => { mode.textContent = "Live updates paused. Reload to reconnect."; mode.classList.add("local"); mode.hidden = false; };
+  db.collection("projects").onSnapshot(s => { projects = s.docs.map(d => ({...d.data(), id:d.id})); renderAll(); }, onErr);
+  db.collection("tools").onSnapshot(s => { tools = s.docs.map(d => ({...d.data(), id:d.id})); renderAll(); }, onErr);
+}
+init();
+</script>
+</body>
+</html>
